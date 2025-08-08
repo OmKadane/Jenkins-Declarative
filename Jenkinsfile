@@ -1,51 +1,33 @@
-# .github/workflows/main.yml
+pipeline {
+    agent any
 
-name: Build, Test, and Deploy
+    parameters {
+        booleanParam(name: 'SKIP_TEST', defaultValue: false, description: 'Check this to skip the test stage')
+    }
 
-# Define when the workflow runs
-on:
-  # Run on pushes to any branch
-  push:
-    branches:
-      - '**'
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-    # Define inputs for manual runs
-    inputs:
-      run-tests:
-        description: 'Run tests?'
-        required: true
-        type: boolean
-        default: true
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+            }
+        }
 
-jobs:
-  # Job 1: Always runs
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+        stage('Test') {
+            when {
+                expression { return !params.SKIP_TEST }
+            }
+            steps {
+                echo 'Testing the application...'
+            }
+        }
 
-      - name: Build step
-        run: echo "Building the application..."
-
-  # Job 2: Runs conditionally
-  test:
-    runs-on: ubuntu-latest
-    # This job will only start after the 'build' job succeeds
-    needs: build
-    # The 'if' conditional checks a condition BEFORE the job starts
-    if: github.event.inputs.run-tests == 'true' || github.event_name == 'push'
-    steps:
-      - name: Test step
-        run: echo "Testing the application..."
-
-  # Job 3: Runs conditionally
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    # The 'if' conditional here checks the branch name
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Deploy step
-        run: echo "Deploying to production from main branch..."
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo 'Deploying to production from main branch...'
+            }
+        }
+    }
+}
