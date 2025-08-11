@@ -1,0 +1,56 @@
+# .github/workflows/main.yml
+
+name: Build, Test, and Deploy Workflow
+
+# This section defines what triggers the workflow to run.
+on:
+  # Run automatically on pushes to any branch.
+  push:
+    branches:
+      - '**' # '**' is a wildcard for all branches
+
+  # This allows you to run the workflow manually from the Actions tab.
+  workflow_dispatch:
+    # Define inputs that appear in the GitHub UI for manual runs.
+    inputs:
+      run_tests:
+        description: 'Do you want to run the test job?'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  # The first job in our workflow.
+  build:
+    runs-on: ubuntu-latest # Specifies the type of machine to run on.
+    steps:
+      # This is a pre-built action that checks out your repository code.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build the application
+        run: echo "Building the application..."
+
+  # The second job, which depends on the 'build' job.
+  test:
+    runs-on: ubuntu-latest
+    needs: build # This job will not start until 'build' completes successfully.
+
+    # This is the conditional logic for this job.
+    if: github.event.inputs.run_tests == 'true' || github.event_name == 'push'
+
+    steps:
+      - name: Run tests
+        run: echo "Running tests..."
+
+  # The third job, which also depends on 'build'.
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    # This is the conditional logic for deployment.
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to production
+        run: echo "Deploying from the main branch..."
